@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fake AI Content Detection Program</title>
+    <!-- Import Bootstrap CDN for styling and responsiveness -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <!-- Import Chart.js CDN for creating charts and graphs -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.4/Chart.min.js"></script>
+    <!-- Import jQuery CDN for simplifying DOM manipulation and AJAX calls -->
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <h1 class="text-center">Fake AI Content Detection Program</h1>
+        <p class="text-center">This program can detect different types of fake AI content, such as deepfake videos, images, text, voice, music, and other types of synthetic media.</p>
+        <!-- Create a form for uploading or inputting media files -->
+        <form id="media-form" enctype="multipart/form-data">
+            <div class="form-group">
+                <label for="media-type">Select media type:</label>
+                <select id="media-type" name="media-type" class="form-control" required>
+                    <option value="">Choose...</option>
+                    <option value="video">Video</option>
+                    <option value="image">Image</option>
+                    <option value="text">Text</option>
+                    <option value="voice">Voice</option>
+                    <option value="music">Music</option>
+                    <option value="other">Other</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="media-file">Upload media file:</label>
+                <input type="file" id="media-file" name="media-file" class="form-control-file" accept=".mp4,.avi,.mov,.jpg,.png,.txt,.wav,.mp3,.mid" required>
+            </div>
+            <!-- Alternatively, users can input a URL or a text instead of uploading a file -->
+            <!--
+            <div class="form-group">
+                <label for="media-url">Or enter media URL:</label>
+                <input type="url" id="media-url" name="media-url" class="form-control" placeholder="https://example.com/media.mp4">
+            </div>
+            <div class="form-group">
+                <label for="media-text">Or enter media text:</label>
+                <textarea id="media-text" name="media-text" class="form-control" rows="5" placeholder="Enter some text here..."></textarea>
+            </div>
+            -->
+            <!-- Create a submit button to send the media file to the back-end -->
+            <button type="submit" id="submit-button" class="btn btn-primary">Submit</button>
+        </form>
+        <!-- Create a div for displaying the results of the fake AI content detection -->
+        <div id="results-div" style="display: none;">
+            <!-- Create a canvas for drawing a pie chart that shows the probability of the media being fake or real -->
+            <canvas id="pie-chart"></canvas>
+            <!-- Create a table for showing the type of fake AI content (if any) and some explanation or evidence for the detection -->
+            <table id="results-table" class="table table-striped table-bordered">
+                <thead>
+                    <tr>
+                        <th scope="col">Type</th>
+                        <th scope="col">Explanation/Evidence</th>
+                    </tr>
+                </thead>
+                <tbody id="results-body">
+                    <!-- The table body will be populated by the back-end with the results -->
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Create a script tag for writing JavaScript code that handles the user interaction and communication with the back-end -->
+        <script>
+
+            // Get the elements from the HTML document by their IDs
+            var mediaForm = document.getElementById("media-form");
+            var mediaType = document.getElementById("media-type");
+            var mediaFile = document.getElementById("media-file");
+            //var mediaUrl = document.getElementById("media-url");
+            //var mediaText = document.getElementById("media-text");
+            var submitButton = document.getElementById("submit-button");
+            var resultsDiv = document.getElementById("results-div");
+            var pieChart = document.getElementById("pie-chart");
+            var resultsTable = document.getElementById("results-table");
+            var resultsBody = document.getElementById("results-body");
+
+            // Define a function that handles the form submission event
+            function handleSubmit(event) {
+                // Prevent the default behavior of the form, which is to reload the page
+                event.preventDefault();
+                // Disable the submit button to prevent multiple submissions
+                submitButton.disabled = true;
+                // Clear the results div and the table body if they have any previous content
+                resultsDiv.style.display = "none";
+                resultsBody.innerHTML = "";
+                // Create a new FormData object that contains the form data
+                var formData = new FormData(mediaForm);
+                // Create a new XMLHttpRequest object that allows us to make AJAX calls to the back-end
+                var xhr = new XMLHttpRequest();
+                // Define a function that handles the response from the back-end
+                function handleResponse() {
+                    // Check if the request is completed and successful
+                    if (xhr.readyState == 4 && xhr.status == 200) {
+                        // Parse the response as a JSON object
+                        var response = JSON.parse(xhr.responseText);
+                        // Check if the response contains an error message
+                        if (response.error) {
+                            // Display the error message as an alert
+                            alert(response.error);
+                        } else {
+                            // Display the results div
+                            resultsDiv.style.display = "block";
+                            // Create a new Chart object that draws a pie chart on the canvas
+                            var chart = new Chart(pieChart, {
+                                type: "pie",
+                                data: {
+                                    labels: ["Fake", "Real"],
+                                    datasets: [{
+                                        data: [response.probability, 1 - response.probability],
+                                        backgroundColor: ["red", "green"]
+                                    }]
+                                },
+                                options: {
+                                    title: {
+                                        display: true,
+                                        text: "Probability of the media being fake or real"
+                                    }
+                                }
+                            });
+                            // Check if the response contains a type and an explanation for the fake AI content detection
+                            if (response.type && response.explanation) {
+                                // Create a new table row element that contains the type and the explanation as table cells
+                                var row = document.createElement("tr");
+                                var typeCell = document.createElement("td");
+                                var explanationCell = document.createElement("td");
+                                typeCell.textContent = response.type;
+                                explanationCell.textContent = response.explanation;
+                                row.appendChild(typeCell);
+                                row.appendChild(explanationCell);
+                                // Append the table row to the table body
+                                resultsBody.appendChild(row);
+                            }
+                        }
+                        // Enable the submit button again
+                        submitButton.disabled = false;
+                    }
+                }
+                // Set the function as the callback for when the request state changes
+                xhr.onreadystatechange = handleResponse;
+                // Open a POST request to the back-end URL that handles the fake AI content detection
+                xhr.open("POST", "/detect");
+                // Send the form data as the request body
+                xhr.send(formData);
+            }
+
+            // Set the function as the event listener for when the form is submitted
+            mediaForm.addEventListener("submit", handleSubmit);
+
+        </script>
+    </div>
+</body>
+</html>
